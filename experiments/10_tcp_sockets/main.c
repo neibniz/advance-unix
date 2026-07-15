@@ -11,12 +11,19 @@
 #include <unistd.h>
 
 static int set_nonblocking(int descriptor, int enabled) {
-  const int flags = fcntl(descriptor, F_GETFL);
+  int flags;
+  do {
+    flags = fcntl(descriptor, F_GETFL);
+  } while (flags == -1 && errno == EINTR);
   if (flags == -1) {
     return -1;
   }
   const int updated = enabled ? flags | O_NONBLOCK : flags & ~O_NONBLOCK;
-  return fcntl(descriptor, F_SETFL, updated);
+  int result;
+  do {
+    result = fcntl(descriptor, F_SETFL, updated);
+  } while (result == -1 && errno == EINTR);
+  return result;
 }
 
 static int finish_nonblocking_connect(int descriptor) {
@@ -38,8 +45,12 @@ static int finish_nonblocking_connect(int descriptor) {
 
   int socket_error = 0;
   socklen_t error_size = sizeof(socket_error);
-  if (getsockopt(descriptor, SOL_SOCKET, SO_ERROR, &socket_error,
-                 &error_size) == -1) {
+  int option_result;
+  do {
+    option_result = getsockopt(descriptor, SOL_SOCKET, SO_ERROR, &socket_error,
+                               &error_size);
+  } while (option_result == -1 && errno == EINTR);
+  if (option_result == -1) {
     return -1;
   }
   if (socket_error != 0) {
@@ -59,6 +70,9 @@ static int send_all(int descriptor, const void *buffer, size_t length) {
     } else if (sent == -1 && errno == EINTR) {
       continue;
     } else {
+      if (sent == 0) {
+        errno = EIO;
+      }
       return -1;
     }
   }
@@ -124,16 +138,22 @@ int main(void) {
   freeaddrinfo(server_addresses);
   server_addresses = NULL;
 
-  struct sockaddr_in bound_address;
+  struct sockaddr_in bound_address = {0};
   socklen_t bound_size = sizeof(bound_address);
   if (getsockname(listener, (struct sockaddr *)&bound_address, &bound_size) ==
       -1) {
     perror("getsockname");
     goto cleanup;
   }
+  if (bound_size != (socklen_t)sizeof(bound_address) ||
+      bound_address.sin_family != AF_INET) {
+    fputs("getsockname returned an unexpected address shape\n", stderr);
+    goto cleanup;
+  }
   char service[6];
   const unsigned int port = ntohs(bound_address.sin_port);
-  if (snprintf(service, sizeof(service), "%u", port) >= (int)sizeof(service)) {
+  const int service_length = snprintf(service, sizeof(service), "%u", port);
+  if (service_length < 0 || service_length >= (int)sizeof(service)) {
     fputs("ephemeral port did not fit in service buffer\n", stderr);
     goto cleanup;
   }
@@ -153,7 +173,10 @@ int main(void) {
 
   if (connect(client, client_addresses->ai_addr,
               client_addresses->ai_addrlen) == -1) {
-    if (errno != EINPROGRESS || finish_nonblocking_connect(client) == -1) {
+    const int connect_error = errno;
+    if ((connect_error != EINPROGRESS && connect_error != EALREADY &&
+         connect_error != EINTR) ||
+        finish_nonblocking_connect(client) == -1) {
       perror("connect/poll");
       goto cleanup;
     }

@@ -70,7 +70,6 @@ int main(void) {
   }
   if (munmap(mapping, mapping_length) < 0) {
     perror("munmap");
-    mapping = MAP_FAILED;
     goto cleanup;
   }
   mapping = MAP_FAILED;

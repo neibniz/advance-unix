@@ -30,7 +30,7 @@ cmake --build --preset dev --target lab_stdio_buffering
 before fflush: 0 bytes; after fflush: total 16 bytes via fd 4
 ```
 
-描述符编号会随运行环境变化。
+刷新前的字节数属于 libc 实现观察值，固定 glibc 环境通常为 0；描述符编号也会随运行环境变化。
 
 ## 注意事项
 

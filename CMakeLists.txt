@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.25)
 
 project(
   advance_unix
-  VERSION 0.2.0
+  VERSION 0.2.1
   DESCRIPTION "Small experiments for advanced Unix and Linux APIs"
   LANGUAGES C
 )

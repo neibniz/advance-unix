@@ -11,6 +11,15 @@
 
 enum { MESSAGE_SIZE = 64 };
 
+static int send_retry(mqd_t queue, const char *message, size_t size,
+                      unsigned int priority) {
+  int result;
+  do {
+    result = mq_send(queue, message, size, priority);
+  } while (result < 0 && errno == EINTR);
+  return result;
+}
+
 static int receive_and_check(mqd_t queue, const char *expected,
                              unsigned int expected_priority) {
   char buffer[MESSAGE_SIZE] = {0};
@@ -68,11 +77,11 @@ int main(void) {
   }
   queue_created = true;
 
-  if (mq_send(queue, low_message, sizeof(low_message), 1U) < 0) {
+  if (send_retry(queue, low_message, sizeof(low_message), 1U) < 0) {
     perror("mq_send low priority");
     goto cleanup;
   }
-  if (mq_send(queue, high_message, sizeof(high_message), 7U) < 0) {
+  if (send_retry(queue, high_message, sizeof(high_message), 7U) < 0) {
     perror("mq_send high priority");
     goto cleanup;
   }
@@ -96,8 +105,6 @@ int main(void) {
     goto cleanup;
   }
 
-  printf("queue %s delivered priorities 7 then 1 and was cleaned up\n",
-         queue_name);
   result = EXIT_SUCCESS;
 
 cleanup:
@@ -108,6 +115,10 @@ cleanup:
   if (queue_created && mq_unlink(queue_name) < 0) {
     perror("mq_unlink");
     result = EXIT_FAILURE;
+  }
+  if (result == EXIT_SUCCESS) {
+    printf("queue %s delivered priorities 7 then 1 and was cleaned up\n",
+           queue_name);
   }
   return result;
 }

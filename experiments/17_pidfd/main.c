@@ -14,10 +14,11 @@
 #endif
 
 static int pidfd_open_compat(pid_t pid, unsigned int flags) {
+  long value;
 #if defined(SYS_pidfd_open)
-  const long value = syscall(SYS_pidfd_open, pid, flags);
+  value = syscall(SYS_pidfd_open, pid, flags);
 #elif defined(__NR_pidfd_open)
-  const long value = syscall(__NR_pidfd_open, pid, flags);
+  value = syscall(__NR_pidfd_open, pid, flags);
 #else
   (void)pid;
   (void)flags;
@@ -85,7 +86,11 @@ int main(void) {
   }
 
   siginfo_t info = {0};
-  if (waitid(P_PIDFD, (id_t)pidfd, &info, WEXITED) < 0) {
+  int wait_result;
+  do {
+    wait_result = waitid(P_PIDFD, (id_t)pidfd, &info, WEXITED);
+  } while (wait_result < 0 && errno == EINTR);
+  if (wait_result < 0) {
     perror("waitid P_PIDFD");
     goto cleanup;
   }
@@ -101,12 +106,19 @@ int main(void) {
   result = EXIT_SUCCESS;
 
 cleanup:
-  if (pidfd >= 0) {
-    (void)close(pidfd);
+  if (pidfd >= 0 && close(pidfd) < 0) {
+    perror("close pidfd");
+    result = EXIT_FAILURE;
   }
   if (child > 0 && !child_reaped) {
     int status = 0;
-    while (waitpid(child, &status, 0) < 0 && errno == EINTR) {
+    pid_t waited;
+    do {
+      waited = waitpid(child, &status, 0);
+    } while (waited < 0 && errno == EINTR);
+    if (waited < 0 && errno != ECHILD) {
+      perror("cleanup waitpid");
+      result = EXIT_FAILURE;
     }
   }
   return result;

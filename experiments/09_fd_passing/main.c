@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,6 +12,68 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+static int write_all(int fd, const void *buffer, size_t length) {
+  const unsigned char *bytes = buffer;
+  size_t written = 0;
+
+  while (written < length) {
+    const ssize_t count = write(fd, bytes + written, length - written);
+    if (count > 0) {
+      written += (size_t)count;
+      continue;
+    }
+    if (count < 0 && errno == EINTR) {
+      continue;
+    }
+    if (count == 0) {
+      errno = EIO;
+    }
+    return -1;
+  }
+  return 0;
+}
+
+static int read_all(int fd, void *buffer, size_t length) {
+  unsigned char *bytes = buffer;
+  size_t received = 0;
+
+  while (received < length) {
+    const ssize_t count = read(fd, bytes + received, length - received);
+    if (count > 0) {
+      received += (size_t)count;
+      continue;
+    }
+    if (count < 0 && errno == EINTR) {
+      continue;
+    }
+    if (count == 0) {
+      errno = EPIPE;
+    }
+    return -1;
+  }
+  return 0;
+}
+
+static pid_t wait_for_child(pid_t child, int *status) {
+  pid_t waited;
+  do {
+    waited = waitpid(child, status, 0);
+  } while (waited < 0 && errno == EINTR);
+  return waited;
+}
+
+static void terminate_and_reap(pid_t child) {
+  const int saved_errno = errno;
+  int kill_result;
+  do {
+    kill_result = kill(child, SIGKILL);
+  } while (kill_result < 0 && errno == EINTR);
+
+  int status;
+  (void)wait_for_child(child, &status);
+  errno = saved_errno;
+}
 
 static int send_descriptor(int socket_fd, int descriptor) {
   char payload = 'F';
@@ -36,7 +99,13 @@ static int send_descriptor(int socket_fd, int descriptor) {
   do {
     sent = sendmsg(socket_fd, &message, 0);
   } while (sent == -1 && errno == EINTR);
-  return sent == (ssize_t)sizeof(payload) ? 0 : -1;
+  if (sent == (ssize_t)sizeof(payload)) {
+    return 0;
+  }
+  if (sent >= 0) {
+    errno = EIO;
+  }
+  return -1;
 }
 
 static int receive_descriptor(int socket_fd) {
@@ -139,13 +208,9 @@ int main(void) {
       _exit(2);
     }
 
-    char buffer[sizeof(expected)] = {0};
-    ssize_t bytes_read;
-    do {
-      bytes_read = read(received_fd, buffer, sizeof(buffer));
-    } while (bytes_read == -1 && errno == EINTR);
-    const int matches = bytes_read == (ssize_t)(sizeof(expected) - 1U) &&
-                        memcmp(buffer, expected, sizeof(expected) - 1U) == 0;
+    char buffer[sizeof(expected) - 1U] = {0};
+    const int matches = read_all(received_fd, buffer, sizeof(buffer)) == 0 &&
+                        memcmp(buffer, expected, sizeof(buffer)) == 0;
     close(received_fd);
     close(channels[1]);
     _exit(matches ? 0 : 3);
@@ -154,29 +219,38 @@ int main(void) {
   close(channels[1]);
   int pipe_fds[2];
   if (pipe(pipe_fds) == -1) {
-    perror("pipe");
+    const int saved_errno = errno;
     close(channels[0]);
-    (void)waitpid(child, NULL, 0);
+    errno = saved_errno;
+    terminate_and_reap(child);
+    perror("pipe");
     return EXIT_FAILURE;
   }
-  const ssize_t written = write(pipe_fds[1], expected, sizeof(expected) - 1U);
+  if (write_all(pipe_fds[1], expected, sizeof(expected) - 1U) < 0) {
+    const int saved_errno = errno;
+    close(pipe_fds[0]);
+    close(pipe_fds[1]);
+    close(channels[0]);
+    errno = saved_errno;
+    terminate_and_reap(child);
+    perror("write pipe payload");
+    return EXIT_FAILURE;
+  }
   close(pipe_fds[1]);
-  if (written != (ssize_t)(sizeof(expected) - 1U) ||
-      send_descriptor(channels[0], pipe_fds[0]) == -1) {
-    perror("sendmsg/write");
+  if (send_descriptor(channels[0], pipe_fds[0]) == -1) {
+    const int saved_errno = errno;
     close(pipe_fds[0]);
     close(channels[0]);
-    (void)waitpid(child, NULL, 0);
+    errno = saved_errno;
+    terminate_and_reap(child);
+    perror("sendmsg");
     return EXIT_FAILURE;
   }
   close(pipe_fds[0]);
   close(channels[0]);
 
   int status = 0;
-  pid_t waited;
-  do {
-    waited = waitpid(child, &status, 0);
-  } while (waited == -1 && errno == EINTR);
+  const pid_t waited = wait_for_child(child, &status);
   const int verified =
       waited == child && WIFEXITED(status) && WEXITSTATUS(status) == 0;
   printf("SCM_RIGHTS payload=%s verification=%s\n", expected,

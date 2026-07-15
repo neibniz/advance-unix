@@ -10,6 +10,27 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+static int write_all(int descriptor, const void *buffer, size_t size) {
+  const unsigned char *bytes = buffer;
+  size_t written = 0;
+
+  while (written < size) {
+    const ssize_t count = write(descriptor, bytes + written, size - written);
+    if (count > 0) {
+      written += (size_t)count;
+      continue;
+    }
+    if (count < 0 && errno == EINTR) {
+      continue;
+    }
+    if (count == 0) {
+      errno = EIO;
+    }
+    return -1;
+  }
+  return 0;
+}
+
 int main(void) {
   static const char file_name[] = "sample.txt";
   static const char content[] = "inotify\n";
@@ -18,6 +39,7 @@ int main(void) {
 
   int inotify_fd = -1;
   int watch = -1;
+  int file_fd = -1;
   int directory_created = 0;
   int file_exists = 0;
   int result = EXIT_FAILURE;
@@ -46,17 +68,22 @@ int main(void) {
     goto cleanup;
   }
 
-  int file_fd = open(file_path, O_CREAT | O_EXCL | O_WRONLY | O_CLOEXEC, 0600);
+  file_fd = open(file_path, O_CREAT | O_EXCL | O_WRONLY | O_CLOEXEC, 0600);
   if (file_fd == -1) {
     perror("open");
     goto cleanup;
   }
   file_exists = 1;
-  const ssize_t written = write(file_fd, content, sizeof(content) - 1U);
-  if (close(file_fd) == -1 || written != (ssize_t)(sizeof(content) - 1U)) {
-    perror("write/close");
+  if (write_all(file_fd, content, sizeof(content) - 1U) < 0) {
+    perror("write");
     goto cleanup;
   }
+  if (close(file_fd) < 0) {
+    perror("close file");
+    file_fd = -1;
+    goto cleanup;
+  }
+  file_fd = -1;
   if (unlink(file_path) == -1) {
     perror("unlink");
     goto cleanup;
@@ -78,14 +105,26 @@ int main(void) {
       perror("poll(inotify)");
       goto cleanup;
     }
+    if ((ready.revents & (POLLERR | POLLHUP | POLLNVAL)) != 0) {
+      fprintf(stderr, "unexpected inotify poll events: %#x\n",
+              (unsigned int)ready.revents);
+      goto cleanup;
+    }
 
     _Alignas(struct inotify_event) char buffer[4096];
-    const ssize_t length = read(inotify_fd, buffer, sizeof(buffer));
+    ssize_t length;
+    do {
+      length = read(inotify_fd, buffer, sizeof(buffer));
+    } while (length < 0 && errno == EINTR);
     if (length == -1 && errno == EAGAIN) {
       continue;
     }
     if (length == -1) {
       perror("read(inotify)");
+      goto cleanup;
+    }
+    if (length == 0) {
+      fputs("read(inotify) returned an unexpected EOF\n", stderr);
       goto cleanup;
     }
 
@@ -98,11 +137,19 @@ int main(void) {
         fputs("truncated inotify event\n", stderr);
         goto cleanup;
       }
+      if ((event->mask & IN_Q_OVERFLOW) != 0U) {
+        fputs("inotify event queue overflowed\n", stderr);
+        goto cleanup;
+      }
       if (event->wd == watch && event->len > 0U &&
           strcmp(event->name, file_name) == 0) {
         observed |= event->mask & required_events;
       }
       offset += event_size;
+    }
+    if (offset != (size_t)length) {
+      fputs("trailing partial inotify event\n", stderr);
+      goto cleanup;
     }
   }
 
@@ -111,6 +158,10 @@ int main(void) {
   result = EXIT_SUCCESS;
 
 cleanup:
+  if (file_fd >= 0 && close(file_fd) < 0) {
+    perror("cleanup close file");
+    result = EXIT_FAILURE;
+  }
   if (file_exists && unlink(file_path) == -1 && errno != ENOENT) {
     perror("cleanup unlink");
     result = EXIT_FAILURE;

@@ -44,7 +44,14 @@ int main(void) {
     goto cleanup;
   }
   file_created = 1;
-  if (write(owner, "x", 1) != 1) {
+  ssize_t write_count;
+  do {
+    write_count = write(owner, "x", 1);
+  } while (write_count < 0 && errno == EINTR);
+  if (write_count != 1) {
+    if (write_count >= 0) {
+      errno = EIO;
+    }
     perror("write");
     goto cleanup;
   }

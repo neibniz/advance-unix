@@ -71,7 +71,7 @@ ctest --preset sanitizers
 | 05 | 进程创建 | `posix_spawnp`、file actions、`waitpid` | POSIX（`pipe2` 为 Linux） |
 | 06 | 同步信号 | `sigprocmask`、`signalfd` | Linux |
 | 07 | 线程同步 | `pthread_mutex_*`、`pthread_cond_*` | POSIX |
-| 08 | 共享内存 | `shm_open`、共享 `mmap`、`sem_init` | POSIX |
+| 08 | 共享内存 | `shm_open`、共享 `mmap`、`sem_init` | POSIX API（本项目仅在 Linux 构建） |
 | 09 | Unix 域套接字 | `socketpair`、`SCM_RIGHTS` | Unix/Linux |
 | 10 | TCP 套接字 | `getaddrinfo`、非阻塞 `connect`、`poll` | POSIX/Linux |
 | 11 | 事件循环 | `epoll`、`eventfd`、`timerfd` | Linux |

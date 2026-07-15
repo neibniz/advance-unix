@@ -38,18 +38,18 @@ int main(void) {
     perror("prepare signal set");
     goto cleanup;
   }
-  if (sigaction(SIGUSR1, &action, &old_action) < 0) {
-    perror("sigaction");
-    goto cleanup;
-  }
-  action_changed = 1;
-
-  /* Block before fork: the child may send while the parent is not waiting. */
+  /* Block before installing the handler and forking, closing the early window
+     in which an unrelated SIGUSR1 could run the new handler. */
   if (sigprocmask(SIG_BLOCK, &blocked, &old_mask) < 0) {
     perror("sigprocmask block");
     goto cleanup;
   }
   mask_changed = 1;
+  if (sigaction(SIGUSR1, &action, &old_action) < 0) {
+    perror("sigaction");
+    goto cleanup;
+  }
+  action_changed = 1;
 
   child = fork();
   if (child < 0) {
@@ -77,7 +77,11 @@ int main(void) {
     goto cleanup;
   }
   const int is_pending = sigismember(&pending, SIGUSR1);
-  if (is_pending != 1 || signal_received != 0) {
+  if (is_pending < 0) {
+    perror("sigismember");
+    goto cleanup;
+  }
+  if (is_pending == 0 || signal_received != 0) {
     fprintf(stderr, "SIGUSR1 was not held pending as expected\n");
     goto cleanup;
   }

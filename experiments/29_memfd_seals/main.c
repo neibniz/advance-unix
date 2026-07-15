@@ -27,6 +27,28 @@ static int write_all(int fd, const void *data, size_t size) {
   return 0;
 }
 
+static int pread_all(int fd, void *data, size_t size, off_t offset) {
+  unsigned char *cursor = data;
+  size_t received = 0;
+
+  while (received < size) {
+    const ssize_t count =
+        pread(fd, cursor + received, size - received, offset + (off_t)received);
+    if (count > 0) {
+      received += (size_t)count;
+      continue;
+    }
+    if (count < 0 && errno == EINTR) {
+      continue;
+    }
+    if (count == 0) {
+      errno = EIO;
+    }
+    return -1;
+  }
+  return 0;
+}
+
 static int expect_resize_eperm(int fd, off_t size, const char *operation) {
   errno = 0;
   if (ftruncate(fd, size) == 0) {
@@ -80,8 +102,8 @@ int main(void) {
   }
 
   errno = 0;
-  if (fcntl(fd, F_ADD_SEALS, F_SEAL_FUTURE_WRITE) >= 0 || errno != EPERM) {
-    fprintf(stderr, "F_SEAL_SEAL did not reject an additional seal\n");
+  if (fcntl(fd, F_ADD_SEALS, F_SEAL_WRITE) >= 0 || errno != EPERM) {
+    fprintf(stderr, "F_SEAL_SEAL did not reject a seal-set update\n");
     goto cleanup;
   }
 
@@ -98,9 +120,11 @@ int main(void) {
   }
 
   char buffer[sizeof(payload)] = {0};
-  const ssize_t read_size = pread(fd, buffer, payload_size, 0);
-  if (read_size != (ssize_t)payload_size ||
-      memcmp(buffer, payload, payload_size) != 0) {
+  if (pread_all(fd, buffer, payload_size, 0) < 0) {
+    perror("pread sealed memfd");
+    goto cleanup;
+  }
+  if (memcmp(buffer, payload, payload_size) != 0) {
     fprintf(stderr, "sealed memfd was not readable\n");
     goto cleanup;
   }

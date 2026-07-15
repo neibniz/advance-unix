@@ -23,6 +23,9 @@ static int write_all(int fd, const void *buffer, size_t length) {
     if (count < 0 && errno == EINTR) {
       continue;
     }
+    if (count == 0) {
+      errno = EIO;
+    }
     return -1;
   }
   return 0;

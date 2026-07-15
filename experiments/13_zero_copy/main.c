@@ -119,17 +119,21 @@ int main(void) {
   result = EXIT_SUCCESS;
 
 cleanup:
-  if (pipe_fds[0] >= 0) {
-    (void)close(pipe_fds[0]);
+  if (pipe_fds[0] >= 0 && close(pipe_fds[0]) < 0) {
+    perror("close pipe reader");
+    result = EXIT_FAILURE;
   }
-  if (pipe_fds[1] >= 0) {
-    (void)close(pipe_fds[1]);
+  if (pipe_fds[1] >= 0 && close(pipe_fds[1]) < 0) {
+    perror("close pipe writer");
+    result = EXIT_FAILURE;
   }
-  if (input_fd >= 0) {
-    (void)close(input_fd);
+  if (input_fd >= 0 && close(input_fd) < 0) {
+    perror("close temporary file");
+    result = EXIT_FAILURE;
   }
-  if (path_exists) {
-    (void)unlink(path);
+  if (path_exists && unlink(path) < 0) {
+    perror("unlink temporary file");
+    result = EXIT_FAILURE;
   }
   return result;
 }

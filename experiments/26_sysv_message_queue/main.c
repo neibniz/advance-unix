@@ -54,6 +54,11 @@ int main(void) {
 
   int child_status = 0;
   if (wait_for_child(child, &child_status) < 0) {
+    const int wait_error = errno;
+    if (wait_error == ECHILD) {
+      child_reaped = 1;
+    }
+    errno = wait_error;
     perror("waitpid");
     goto cleanup;
   }

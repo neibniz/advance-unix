@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,6 +26,72 @@ static ssize_t pread_full(int fd, void *buffer, size_t length, off_t offset) {
   return (ssize_t)done;
 }
 
+static int pwrite_all(int fd, const void *buffer, size_t length, off_t offset) {
+  size_t done = 0;
+
+  while (done < length) {
+    const ssize_t count = pwrite(fd, (const char *)buffer + done, length - done,
+                                 offset + (off_t)done);
+    if (count > 0) {
+      done += (size_t)count;
+      continue;
+    }
+    if (count < 0 && errno == EINTR) {
+      continue;
+    }
+    if (count == 0) {
+      errno = EIO;
+    }
+    return -1;
+  }
+  return 0;
+}
+
+static int transfer_iovecs(int fd, struct iovec *vectors, size_t vector_count,
+                           bool writing) {
+  size_t current = 0;
+
+  while (current < vector_count) {
+    while (current < vector_count && vectors[current].iov_len == 0U) {
+      ++current;
+    }
+    if (current == vector_count) {
+      break;
+    }
+
+    ssize_t count;
+    do {
+      const int remaining = (int)(vector_count - current);
+      count = writing ? writev(fd, vectors + current, remaining)
+                      : readv(fd, vectors + current, remaining);
+    } while (count < 0 && errno == EINTR);
+    if (count <= 0) {
+      if (count == 0) {
+        errno = EIO;
+      }
+      return -1;
+    }
+
+    size_t transferred = (size_t)count;
+    while (transferred > 0U && current < vector_count) {
+      if (transferred >= vectors[current].iov_len) {
+        transferred -= vectors[current].iov_len;
+        ++current;
+      } else {
+        vectors[current].iov_base =
+            (char *)vectors[current].iov_base + transferred;
+        vectors[current].iov_len -= transferred;
+        transferred = 0;
+      }
+    }
+    if (transferred != 0U) {
+      errno = EIO;
+      return -1;
+    }
+  }
+  return 0;
+}
+
 int main(void) {
   static const char expected[] = "hello UNIX!";
   char path[] = "./lab_file_io.XXXXXX";
@@ -44,20 +111,12 @@ int main(void) {
       {.iov_base = (void *)" ", .iov_len = 1},
       {.iov_base = (void *)"world", .iov_len = 5},
   };
-  ssize_t count;
-  do {
-    count = writev(fd, output, 3);
-  } while (count < 0 && errno == EINTR);
-  if (count != (ssize_t)(sizeof(expected) - 1)) {
-    fprintf(stderr, "writev: expected %zu bytes, got %zd\n",
-            sizeof(expected) - 1, count);
+  if (transfer_iovecs(fd, output, 3U, true) < 0) {
+    perror("writev");
     goto cleanup;
   }
 
-  do {
-    count = pwrite(fd, "UNIX!", 5, 6);
-  } while (count < 0 && errno == EINTR);
-  if (count != 5) {
+  if (pwrite_all(fd, "UNIX!", 5U, (off_t)6) < 0) {
     perror("pwrite");
     goto cleanup;
   }
@@ -69,7 +128,8 @@ int main(void) {
   }
 
   char positioned[sizeof(expected)] = {0};
-  count = pread_full(fd, positioned, sizeof(expected) - 1, 0);
+  const ssize_t count =
+      pread_full(fd, positioned, sizeof(expected) - 1U, (off_t)0);
   if (count != (ssize_t)(sizeof(expected) - 1) ||
       memcmp(positioned, expected, sizeof(expected) - 1) != 0) {
     fprintf(stderr, "pread verification failed\n");
@@ -92,12 +152,8 @@ int main(void) {
       {.iov_base = separator, .iov_len = sizeof(separator)},
       {.iov_base = last, .iov_len = sizeof(last)},
   };
-  do {
-    count = readv(fd, input, 3);
-  } while (count < 0 && errno == EINTR);
-  if (count != (ssize_t)(sizeof(expected) - 1)) {
-    fprintf(stderr, "readv: expected %zu bytes, got %zd\n",
-            sizeof(expected) - 1, count);
+  if (transfer_iovecs(fd, input, 3U, false) < 0) {
+    perror("readv");
     goto cleanup;
   }
 

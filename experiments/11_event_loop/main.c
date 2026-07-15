@@ -13,6 +13,34 @@ enum {
   TIMERFD_ID = 2,
 };
 
+static int read_counter(int descriptor, uint64_t *value) {
+  ssize_t count;
+  do {
+    count = read(descriptor, value, sizeof(*value));
+  } while (count < 0 && errno == EINTR);
+  if (count != (ssize_t)sizeof(*value)) {
+    if (count >= 0) {
+      errno = EIO;
+    }
+    return -1;
+  }
+  return 0;
+}
+
+static int write_counter(int descriptor, const uint64_t *value) {
+  ssize_t count;
+  do {
+    count = write(descriptor, value, sizeof(*value));
+  } while (count < 0 && errno == EINTR);
+  if (count != (ssize_t)sizeof(*value)) {
+    if (count >= 0) {
+      errno = EIO;
+    }
+    return -1;
+  }
+  return 0;
+}
+
 int main(void) {
   int epoll_fd = -1;
   int event_fd = -1;
@@ -24,10 +52,18 @@ int main(void) {
   int saw_timer = 0;
 
   epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+  if (epoll_fd == -1) {
+    perror("epoll_create1");
+    goto cleanup;
+  }
   event_fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+  if (event_fd == -1) {
+    perror("eventfd");
+    goto cleanup;
+  }
   timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
-  if (epoll_fd == -1 || event_fd == -1 || timer_fd == -1) {
-    perror("epoll_create1/eventfd/timerfd_create");
+  if (timer_fd == -1) {
+    perror("timerfd_create");
     goto cleanup;
   }
 
@@ -53,8 +89,7 @@ int main(void) {
     goto cleanup;
   }
   const uint64_t wake_value = 7;
-  if (write(event_fd, &wake_value, sizeof(wake_value)) !=
-      (ssize_t)sizeof(wake_value)) {
+  if (write_counter(event_fd, &wake_value) < 0) {
     perror("write(eventfd)");
     goto cleanup;
   }
@@ -76,15 +111,13 @@ int main(void) {
 
     for (int index = 0; index < ready; ++index) {
       if (events[index].data.u32 == EVENTFD_ID && !saw_event) {
-        if (read(event_fd, &event_value, sizeof(event_value)) !=
-            (ssize_t)sizeof(event_value)) {
+        if (read_counter(event_fd, &event_value) < 0) {
           perror("read(eventfd)");
           goto cleanup;
         }
         saw_event = 1;
       } else if (events[index].data.u32 == TIMERFD_ID && !saw_timer) {
-        if (read(timer_fd, &timer_expirations, sizeof(timer_expirations)) !=
-            (ssize_t)sizeof(timer_expirations)) {
+        if (read_counter(timer_fd, &timer_expirations) < 0) {
           perror("read(timerfd)");
           goto cleanup;
         }
@@ -100,14 +133,17 @@ int main(void) {
   result = verified ? EXIT_SUCCESS : EXIT_FAILURE;
 
 cleanup:
-  if (timer_fd != -1) {
-    close(timer_fd);
+  if (timer_fd != -1 && close(timer_fd) < 0) {
+    perror("close(timerfd)");
+    result = EXIT_FAILURE;
   }
-  if (event_fd != -1) {
-    close(event_fd);
+  if (event_fd != -1 && close(event_fd) < 0) {
+    perror("close(eventfd)");
+    result = EXIT_FAILURE;
   }
-  if (epoll_fd != -1) {
-    close(epoll_fd);
+  if (epoll_fd != -1 && close(epoll_fd) < 0) {
+    perror("close(epoll)");
+    result = EXIT_FAILURE;
   }
   return result;
 }

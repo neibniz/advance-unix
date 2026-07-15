@@ -33,7 +33,15 @@ static int read_exact_with_poll(int descriptor, void *buffer, size_t size) {
       errno = ETIMEDOUT;
       return -1;
     }
-    if (ready < 0 || (watched.revents & (POLLERR | POLLNVAL)) != 0) {
+    if (ready < 0) {
+      return -1;
+    }
+    if ((watched.revents & POLLNVAL) != 0) {
+      errno = EBADF;
+      return -1;
+    }
+    if ((watched.revents & POLLERR) != 0) {
+      errno = EIO;
       return -1;
     }
     ssize_t count;
@@ -118,6 +126,11 @@ int main(void) {
      reported child failure before polling the FIFO. */
   int child_status = 0;
   if (wait_for_child(child, &child_status) < 0) {
+    const int wait_error = errno;
+    if (wait_error == ECHILD) {
+      child_reaped = 1;
+    }
+    errno = wait_error;
     perror("waitpid");
     goto cleanup;
   }

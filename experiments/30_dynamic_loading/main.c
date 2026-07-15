@@ -11,7 +11,9 @@ int main(void) {
 
   handle = dlopen("libm.so.6", RTLD_NOW | RTLD_LOCAL);
   if (handle == NULL) {
-    fprintf(stderr, "dlopen libm.so.6: %s\n", dlerror());
+    const char *const open_error = dlerror();
+    fprintf(stderr, "dlopen libm.so.6: %s\n",
+            open_error != NULL ? open_error : "unknown error");
     goto cleanup;
   }
 

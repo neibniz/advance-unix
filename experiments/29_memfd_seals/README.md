@@ -19,7 +19,7 @@
 
 ## 原理
 
-程序先写入一段文本，再添加 `F_SEAL_WRITE | F_SEAL_GROW | F_SEAL_SHRINK`，最后以 `F_SEAL_SEAL` 禁止继续修改 seal 集合。程序尝试再加入 `F_SEAL_FUTURE_WRITE`，必须得到 `EPERM`；读取仍然允许，但覆盖原内容、增长和缩小文件也都必须失败。seal 只能增加，不能移除。
+程序先写入一段文本，再添加 `F_SEAL_WRITE | F_SEAL_GROW | F_SEAL_SHRINK`，最后以 `F_SEAL_SEAL` 禁止继续修改 seal 集合。程序再次调用 `F_ADD_SEALS`，必须得到 `EPERM`；读取仍然允许，但覆盖原内容、增长和缩小文件也都必须失败。seal 只能增加，不能移除。
 
 ## 构建与运行
 

@@ -113,11 +113,13 @@ cleanup:
     perror("cleanup: restore termios");
     result = EXIT_FAILURE;
   }
-  if (slave_fd >= 0) {
-    (void)close(slave_fd);
+  if (slave_fd >= 0 && close(slave_fd) < 0) {
+    perror("close PTY slave");
+    result = EXIT_FAILURE;
   }
-  if (master_fd >= 0) {
-    (void)close(master_fd);
+  if (master_fd >= 0 && close(master_fd) < 0) {
+    perror("close PTY master");
+    result = EXIT_FAILURE;
   }
   return result;
 }

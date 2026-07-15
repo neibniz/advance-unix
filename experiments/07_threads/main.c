@@ -76,7 +76,7 @@ static void *consumer(void *argument) {
 }
 
 int main(void) {
-  struct queue queue = {
+  static struct queue queue = {
       .mutex = PTHREAD_MUTEX_INITIALIZER,
       .not_empty = PTHREAD_COND_INITIALIZER,
       .not_full = PTHREAD_COND_INITIALIZER,
