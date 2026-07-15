@@ -82,17 +82,29 @@ ctest --preset sanitizers
 | 16 | 终端与 PTY | `posix_openpt`、`grantpt`、`termios` | POSIX/XSI |
 | 17 | 进程描述符 | `pidfd_open`、`poll`、`waitid` | Linux |
 | 18 | POSIX 消息队列 | `mq_open`、`mq_send`、`mq_receive` | POSIX API（本项目仅在 Linux 构建） |
+| 19 | 文件属性 | `umask`、`fchmod`、`futimens`、`fstat` | POSIX |
+| 20 | 稀疏文件 | `pwrite`、`SEEK_DATA`、`SEEK_HOLE` | Linux/文件系统相关 |
+| 21 | 标准 I/O 缓冲 | `fdopen`、`setvbuf`、`fflush`、`fileno` | ISO C/POSIX |
+| 22 | 进程组与会话 | `setsid`、`getpgid`、`getsid` | POSIX |
+| 23 | 可移植信号等待 | `sigaction`、`sigprocmask`、`sigsuspend` | POSIX |
+| 24 | 线程特定数据 | `pthread_once`、`pthread_key_create`、析构器 | POSIX |
+| 25 | 命名管道 | `mkfifo`、非阻塞 `open`、`poll` | POSIX |
+| 26 | System V 消息队列 | `msgget`、`msgsnd`、`msgrcv`、`msgctl` | System V API（本项目仅在 Linux 构建） |
+| 27 | POSIX 异步 I/O | `aio_read`、`aio_suspend`、`aio_return` | POSIX API（本项目仅在 Linux 构建） |
+| 28 | 扩展属性 | `fsetxattr`、`fgetxattr`、`flistxattr` | Linux |
+| 29 | 匿名内存文件 | `memfd_create`、`F_ADD_SEALS`、`F_GET_SEALS` | Linux |
+| 30 | 动态装载 | `dlopen`、`dlsym`、`dlerror`、`dlclose` | Linux/glibc |
 
 每一行都对应 `experiments/NN_name/README.md`，其中包含原理、预期输出、边界条件和思考题。
 
 ## 建议学习顺序
 
-1. 先做 01–03，建立“文件描述符、打开文件描述、地址空间”的区别。
-2. 再做 05–09，理解进程、信号、线程与 IPC 的生命周期。
-3. 然后做 10–13，观察非阻塞 I/O、就绪通知和数据路径。
-4. 最后做 14–18，学习资源控制、调度以及 Linux 的现代接口。
+1. 先做 01–04、19–21，建立文件描述符、打开文件描述、元数据、缓冲与地址空间的区别。
+2. 再做 05–09、22–26，理解进程、会话、信号、线程与两代 IPC 的生命周期。
+3. 然后做 10–13、27，观察非阻塞 I/O、就绪通知、异步完成和数据路径。
+4. 最后做 14–18、28–30，学习资源控制、调度以及 Linux 的扩展接口。
 
-进一步的实验方法、可移植性说明和资料索引见 [docs/LEARNING_GUIDE.md](docs/LEARNING_GUIDE.md)，环境约束见 [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
+书籍主题与实验的对应关系见 [docs/BOOK_COVERAGE.md](docs/BOOK_COVERAGE.md)，进一步的实验方法和可移植性说明见 [docs/LEARNING_GUIDE.md](docs/LEARNING_GUIDE.md)，环境约束见 [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
 ## 设计原则
 

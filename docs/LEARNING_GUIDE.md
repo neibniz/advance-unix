@@ -13,9 +13,10 @@ POSIX 实验展示跨 Unix-like 系统通常共有的抽象；Linux 实验展示
 | 层次 | 本项目示例 | 学习重点 |
 |---|---|---|
 | ISO C | 基本数据与错误输出 | 语言层，不描述进程或文件描述符 |
-| POSIX | `pthread`、`mmap`、`shm_open`、`mq_open` | Unix-like 系统的共同接口 |
+| POSIX | `pthread`、`mmap`、`shm_open`、`mq_open`、`aio_read` | Unix-like 系统的共同接口 |
 | XSI | PTY 相关接口 | POSIX 的扩展选项组 |
-| Linux | `epoll`、`signalfd`、`pidfd`、`inotify` | 内核专有、高性能或新式生命周期接口 |
+| System V | `msgget`、`msgsnd`、`msgrcv` | 历史悠久、仍广泛存在的 IPC 接口 |
+| Linux | `epoll`、`signalfd`、`pidfd`、`inotify`、`memfd_create` | 内核专有、高性能或新式生命周期接口 |
 
 CMake 中的 `LINUX_ONLY` 会在非 Linux 平台跳过对应目标。源码使用 `_GNU_SOURCE` 暴露 glibc 的 Linux/GNU 声明。
 
@@ -53,13 +54,13 @@ man 7 unix
 
 ## 延伸资料
 
-- W. Richard Stevens、Stephen A. Rago，《Advanced Programming in the UNIX Environment》；
-- Michael Kerrisk，《The Linux Programming Interface》；
+- W. Richard Stevens、Stephen A. Rago，[《UNIX 环境高级编程》（APUE）第 3 版](https://www.informit.com/store/advanced-programming-in-the-unix-environment-9780321638007)；
+- Michael Kerrisk，[《Linux/UNIX 系统编程手册》（TLPI）及详细目录](https://man7.org/tlpi/toc-detailed.html)；
 - Linux `man-pages` 项目，尤其第 2、3、7 节；
 - The Open Group 的 POSIX Base Specifications；
 - Linux 内核文档中与文件系统、调度、网络和 userspace API 相关的章节。
 
-书和标准用于理解稳定语义，当前运行内核的 `man` 页面用于确认 Linux 专有标志、版本要求和错误码。
+书和标准用于理解稳定语义，当前运行内核的 `man` 页面用于确认 Linux 专有标志、版本要求和错误码。完整的主题映射和仍未覆盖的领域见 [BOOK_COVERAGE.md](BOOK_COVERAGE.md)。
 
 ## 增加一个实验
 
