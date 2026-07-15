@@ -15,6 +15,8 @@
 
 ```sh
 rsync -az \
+  --no-owner \
+  --no-group \
   --exclude build \
   -e 'ssh -i ~/.ssh/ssh_linkwater' \
   ./ root@192.168.31.192:/data/advance-unix/

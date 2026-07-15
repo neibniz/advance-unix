@@ -19,6 +19,8 @@
 
 `dev` 和 `sanitizers` build preset 都启用 `cleanFirst`。本机与远端的时钟可能不同，而 `rsync -a` 会保留本机源码时间；全量重编译可避免 Ninja 因对象文件时间较新而误用旧二进制。实验规模很小，因此这项确定性检查的成本很低。
 
+从非 Linux 主机以远端 root 身份同步时应使用 README 中的 `--no-owner --no-group`，避免把本机数值 UID/GID 带到远端并触发 Git 的仓库所有权检查。
+
 ## 目录边界
 
 远端源码和构建产物都位于：
