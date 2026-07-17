@@ -33,4 +33,4 @@ process control verified; captured: child: posix_spawnp
 
 ## 注意与思考
 
-`posix_spawn*` 系列直接返回错误码，不一定设置 `errno`。父进程必须关闭管道写端，否则读取端可能永远等不到 EOF；所有成功创建的子进程也必须被回收。思考：与 `fork` 后在多线程进程中执行复杂初始化相比，spawn 文件动作有什么优势？
+`posix_spawn*` 系列直接返回错误码，不一定设置 `errno`。父进程必须关闭管道写端，否则读取端可能永远等不到 EOF；所有成功创建的子进程也必须被回收。非 Linux 的 `pipe` + `fcntl` 回退不是原子操作；本实验是单线程程序，多线程程序若可能并发执行 `exec`，应优先使用平台提供的原子 close-on-exec 创建接口。思考：与 `fork` 后在多线程进程中执行复杂初始化相比，spawn 文件动作有什么优势？

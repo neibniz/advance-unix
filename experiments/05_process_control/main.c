@@ -54,7 +54,7 @@ int main(void) {
   int result = EXIT_FAILURE;
 
   if (make_cloexec_pipe(pipefd) < 0) {
-    perror("pipe2");
+    perror("create close-on-exec pipe");
     goto cleanup;
   }
 
