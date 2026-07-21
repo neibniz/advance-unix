@@ -17,7 +17,7 @@
 
 ## 原理插图
 
-![实验 03：共享文件映射与同步原理插图](https://oss.euler.icu/teaser/advance-unix/principles/03_memory_mapping.png)
+![实验 03：共享文件映射与同步原理插图](https://oss.euler.icu/teaser/advance-unix/principles/03_memory_mapping.png?v=6bdd7569)
 
 > 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
 

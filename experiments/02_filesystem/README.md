@@ -17,7 +17,7 @@
 
 ## 原理插图
 
-![实验 02：基于目录描述符的文件系统操作原理插图](https://oss.euler.icu/teaser/advance-unix/principles/02_filesystem.png)
+![实验 02：基于目录描述符的文件系统操作原理插图](https://oss.euler.icu/teaser/advance-unix/principles/02_filesystem.png?v=320c15c7)
 
 > 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
 

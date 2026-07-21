@@ -17,7 +17,7 @@
 
 ## 原理插图
 
-![实验 05：posix_spawnp、管道与子进程回收原理插图](https://oss.euler.icu/teaser/advance-unix/principles/05_process_control.png)
+![实验 05：posix_spawnp、管道与子进程回收原理插图](https://oss.euler.icu/teaser/advance-unix/principles/05_process_control.png?v=29a79e83-2)
 
 > 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
 
