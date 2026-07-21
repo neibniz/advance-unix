@@ -14,6 +14,12 @@
 
 程序比较 `getrlimit` 与 `prlimit` 的查询结果，把 `RLIMIT_NOFILE` 软限制临时设为原值与 64 中较小者，确认修改生效后立即恢复原值；原值已经不高于 64 时不会进一步降低。它不尝试打开大量文件，因此不会真正耗尽资源。最后校验并输出 `getrusage` 的时间字段。
 
+## 原理插图
+
+![实验 14：资源限制与资源用量原理插图](https://oss.euler.icu/teaser/advance-unix/principles/14_resource_limits.png)
+
+> 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
+
 ## 构建与运行
 
 ```sh

@@ -20,6 +20,12 @@
 
 调用 `dlsym` 前先调用一次 `dlerror` 清除旧错误，再在查找后读取错误状态。为避免直接强制转换触发编译器诊断，程序在固定 Linux/glibc ABI 上验证两种指针大小一致，并用 `memcpy` 复制表示；随后调用解析出的函数并自校验结果。这是目标 ABI/POSIX 实现约定，不是 ISO C 对任意平台的保证。
 
+## 原理插图
+
+![实验 30：运行时动态加载原理插图](https://oss.euler.icu/teaser/advance-unix/principles/30_dynamic_loading.png)
+
+> 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
+
 ## 构建与运行
 
 ```sh

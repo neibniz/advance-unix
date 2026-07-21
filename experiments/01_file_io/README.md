@@ -14,6 +14,12 @@
 
 程序先用 `writev` 写入 `hello world`，再用 `pwrite` 将后半段原地改为 `UNIX!`。随后以 `pread` 校验完整内容及当前偏移，最后用三个 `iovec` 通过 `readv` 将内容读回不同缓冲区并重新组合。
 
+## 原理插图
+
+![实验 01：定位 I/O 与分散/聚集 I/O 原理插图](https://oss.euler.icu/teaser/advance-unix/principles/01_file_io.png)
+
+> 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
+
 ## 构建与运行
 
 在项目根目录执行：

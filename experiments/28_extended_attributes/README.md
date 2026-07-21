@@ -20,6 +20,12 @@
 
 程序在临时文件上创建 `user.advance_unix`，验证查询到的长度和值，再遍历 `flistxattr` 返回的变长名称列表。删除属性后再次读取必须失败，且 `errno` 必须是 `ENODATA`。所有操作结束后关闭并删除临时文件。
 
+## 原理插图
+
+![实验 28：文件扩展属性原理插图](https://oss.euler.icu/teaser/advance-unix/principles/28_extended_attributes.png)
+
+> 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
+
 ## 构建与运行
 
 ```sh

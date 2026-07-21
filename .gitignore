@@ -4,3 +4,4 @@ compile_commands.json
 *.swp
 *.tmp
 .DS_Store
+/docs/assets/principles/*.png

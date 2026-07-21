@@ -15,6 +15,12 @@
 
 子进程以状态 42 退出。父进程通过系统调用兼容封装打开 pidfd，使用 `poll` 等待退出事件，再以 `waitid(P_PIDFD, ...)` 回收并校验 PID、退出原因和状态码。
 
+## 原理插图
+
+![实验 17：使用 pidfd 等待进程原理插图](https://oss.euler.icu/teaser/advance-unix/principles/17_pidfd.png)
+
+> 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
+
 ## 构建与运行
 
 ```sh

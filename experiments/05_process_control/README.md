@@ -15,6 +15,12 @@
 
 父进程将管道写端通过 spawn 文件动作复制到子进程的标准输出，然后启动外部 `printf`。父进程关闭自己的写端，读取到 EOF，等待子进程结束，并同时验证输出文本和退出码。非 Linux 系统使用 `pipe` 加 `fcntl(FD_CLOEXEC)` 回退，以保持本目标可构建。
 
+## 原理插图
+
+![实验 05：posix_spawnp、管道与子进程回收原理插图](https://oss.euler.icu/teaser/advance-unix/principles/05_process_control.png)
+
+> 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
+
 ## 构建与运行
 
 ```sh

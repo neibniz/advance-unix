@@ -15,6 +15,12 @@
 
 程序在运行时当前目录建立唯一临时目录，注册 `IN_CREATE`、`IN_CLOSE_WRITE`、`IN_DELETE` 等事件，然后创建 `sample.txt`、写入内容并删除它。事件可能一次读取多条，因此程序按每条记录的固定头和 `len` 字段步进，直到观察到三个必需事件。最后移除 watch 并删除目录；按项目约定运行时，该临时资源始终位于 `/data` 下的项目或构建目录中。
 
+## 原理插图
+
+![实验 12：用 inotify 观察文件系统事件原理插图](https://oss.euler.icu/teaser/advance-unix/principles/12_filesystem_events.png)
+
+> 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
+
 ## 构建与运行
 
 本实验只在 Linux 上生成：

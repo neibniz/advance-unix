@@ -20,6 +20,12 @@
 
 `IPC_PRIVATE` 每次都创建新队列，返回的标识符在 `fork` 后由父子进程共享。消息结构的第一个字段必须是正 `long` 类型；传给 `msgsnd`/`msgrcv` 的长度只计算正文，不包含该字段。子进程使用 `IPC_NOWAIT` 发送后退出，父进程先回收并检查退出状态，再通过 `IPC_STAT` 确认队列内恰有一条消息，按类型非阻塞接收并验证内容。所有父进程路径最终执行 `IPC_RMID`。
 
+## 原理插图
+
+![实验 26：System V 消息队列原理插图](https://oss.euler.icu/teaser/advance-unix/principles/26_sysv_message_queue.png)
+
+> 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
+
 ## 构建与运行
 
 本实验在仓库中固定为 Linux 目标：

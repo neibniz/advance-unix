@@ -16,6 +16,12 @@
 
 服务端通过 `getaddrinfo` 得到 `127.0.0.1:0`，绑定后用 `getsockname` 取得实际端口。客户端再次解析该端口，把套接字设为非阻塞并调用 `connect`；若连接仍在进行，就等待 `POLLOUT`，随后读取 `SO_ERROR` 判断真实结果。连接成功后恢复阻塞模式，服务端用 `accept4` 接收连接，双方交换并校验固定消息。
 
+## 原理插图
+
+![实验 10：非阻塞 TCP 连接与 loopback 自验证原理插图](https://oss.euler.icu/teaser/advance-unix/principles/10_tcp_sockets.png)
+
+> 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
+
 ## 构建与运行
 
 本实验因使用 `accept4` 标记为 Linux-only，且完全不访问外网：

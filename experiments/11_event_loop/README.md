@@ -15,6 +15,12 @@
 
 程序把 `eventfd` 和 `timerfd` 注册到同一个 epoll 实例，用 `data.u32` 区分事件来源。一次性定时器设为 20 ms，同时向 `eventfd` 写入 7。循环不假设事件顺序，分别读取两个 64 位计数并在都出现后验证结果。
 
+## 原理插图
+
+![实验 11：用 epoll 统一等待通知与定时器原理插图](https://oss.euler.icu/teaser/advance-unix/principles/11_event_loop.png)
+
+> 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
+
 ## 构建与运行
 
 本实验只在 Linux 上生成：

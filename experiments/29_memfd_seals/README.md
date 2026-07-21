@@ -21,6 +21,12 @@
 
 程序先写入一段文本，再添加 `F_SEAL_WRITE | F_SEAL_GROW | F_SEAL_SHRINK`，最后以 `F_SEAL_SEAL` 禁止继续修改 seal 集合。程序再次调用 `F_ADD_SEALS`，必须得到 `EPERM`；读取仍然允许，但覆盖原内容、增长和缩小文件也都必须失败。seal 只能增加，不能移除。
 
+## 原理插图
+
+![实验 29：memfd 文件封印原理插图](https://oss.euler.icu/teaser/advance-unix/principles/29_memfd_seals.png)
+
+> 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
+
 ## 构建与运行
 
 ```sh

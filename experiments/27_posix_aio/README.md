@@ -21,6 +21,12 @@
 
 程序创建并立即取消链接一个临时文件，写入固定文本后以偏移 0 提交 `aio_read`。等待循环用 `aio_error` 排除虚假唤醒，再由 `aio_return` 取得结果。任何后续步骤失败时，清理路径都会先尝试取消、等待请求离开 `EINPROGRESS`，然后回收 `aiocb`。
 
+## 原理插图
+
+![实验 27：POSIX 异步文件 I/O 原理插图](https://oss.euler.icu/teaser/advance-unix/principles/27_posix_aio.png)
+
+> 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
+
 ## 构建与运行
 
 ```sh
