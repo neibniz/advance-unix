@@ -18,7 +18,7 @@
 
 ## 原理插图
 
-![实验 08：POSIX 共享内存与进程共享信号量原理插图](https://oss.euler.icu/teaser/advance-unix/principles/08_shared_memory.png)
+![实验 08：POSIX 共享内存与进程共享信号量原理插图](https://oss.euler.icu/teaser/advance-unix/principles/08_shared_memory.png?v=113e88b2-2)
 
 > 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
 

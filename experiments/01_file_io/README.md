@@ -16,7 +16,7 @@
 
 ## 原理插图
 
-![实验 01：定位 I/O 与分散/聚集 I/O 原理插图](https://oss.euler.icu/teaser/advance-unix/principles/01_file_io.png)
+![实验 01：定位 I/O 与分散/聚集 I/O 原理插图](https://oss.euler.icu/teaser/advance-unix/principles/01_file_io.png?v=7b61f42f-2)
 
 > 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
 

@@ -17,7 +17,7 @@
 
 ## 原理插图
 
-![实验 07：互斥量与条件变量原理插图](https://oss.euler.icu/teaser/advance-unix/principles/07_threads.png)
+![实验 07：互斥量与条件变量原理插图](https://oss.euler.icu/teaser/advance-unix/principles/07_threads.png?v=161d8b25-2)
 
 > 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
 

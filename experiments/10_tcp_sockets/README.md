@@ -18,7 +18,7 @@
 
 ## 原理插图
 
-![实验 10：非阻塞 TCP 连接与 loopback 自验证原理插图](https://oss.euler.icu/teaser/advance-unix/principles/10_tcp_sockets.png)
+![实验 10：非阻塞 TCP 连接与 loopback 自验证原理插图](https://oss.euler.icu/teaser/advance-unix/principles/10_tcp_sockets.png?v=816ba8ce-2)
 
 > 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
 

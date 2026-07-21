@@ -16,7 +16,7 @@
 
 ## 原理插图
 
-![实验 04：Linux 开放文件描述 OFD 锁原理插图](https://oss.euler.icu/teaser/advance-unix/principles/04_file_locking.png)
+![实验 04：Linux 开放文件描述 OFD 锁原理插图](https://oss.euler.icu/teaser/advance-unix/principles/04_file_locking.png?v=64415923-2)
 
 > 蓝色表示用户空间，琥珀色表示内核对象，绿色表示成功路径，珊瑚色表示语义边界或失败路径。
 
