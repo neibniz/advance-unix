@@ -1,0 +1,20 @@
+{
+  "name": "advance-unix",
+  "image": "ghcr.io/neibniz/clang-dev:7ee244e55f19",
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools"
+      ],
+      "settings": {
+        "cmake.useCMakePresets": "always",
+        "cmake.configureOnOpen": true,
+        "clangd.arguments": [
+          "--compile-commands-dir=${workspaceFolder}/build/dev"
+        ]
+      }
+    }
+  }
+}
